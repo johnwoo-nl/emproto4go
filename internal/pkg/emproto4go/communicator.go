@@ -132,6 +132,10 @@ func (communicator *Communicator) Tick() {
 }
 
 func (communicator *Communicator) Start() error {
+	if communicator.started {
+		return fmt.Errorf("communicator already started")
+	}
+
 	addr := net.UDPAddr{
 		Port: 28376,
 		IP:   net.ParseIP("0.0.0.0"),
