@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -14,8 +15,8 @@ import (
 )
 
 func main() {
-	if len(os.Args) <= 1 || strings.ToLower(os.Args[1]) == "help" || strings.ToLower(os.Args[1]) == "--help" || strings.ToLower(os.Args[1]) == "-h" {
-		log.Printf("Usage: %s [serial=password] [info] [start[=amps] | stop] [debug]", os.Args[0])
+	if len(os.Args) > 1 && (strings.ToLower(os.Args[1]) == "help" || strings.ToLower(os.Args[1]) == "--help" || strings.ToLower(os.Args[1]) == "-h") {
+		log.Printf("Usage: %s [serial=password] [info] [start[=amps] | stop] [debug]", filepath.Base(os.Args[0]))
 		log.Printf("  serial:   EVSE serial number (optional, prints only basic info otherwise)")
 		log.Printf("  password: EVSE password (optional, prints only basic info otherwise)")
 		log.Printf("  compat:   Print some EVSE compatibility info useful for debugging")
@@ -64,7 +65,7 @@ func main() {
 	communicator := emproto4go.CreateCommunicator("emproto4go_test", debug)
 	err := communicator.Start()
 	if err != nil {
-		log.Fatalf("Cannot start communicator: %v", err)
+		log.Printf("Cannot start communicator: %v", err)
 		return
 	}
 	defer communicator.Stop()

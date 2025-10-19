@@ -43,7 +43,8 @@ type EmCommunicator interface {
 	// managed by this communicator. The channel will be closed when the communicator is stopped. The caller must drain
 	// the channel in a separate goroutine to avoid blocking the communicator.
 	// Pass nil for evse to get events for all EVSEs.
-	// Call Stop() on the returned watcher to stop receiving events (this will close the channel as well).
+	// Call Stop() on the returned watcher to stop receiving events (this will close the channel as well, unblocking
+	// any goroutines waiting for data from the channel).
 	Watch(evse EmEvse, eventTypes []EmEventType, channel chan<- EmEvent) EmEventWatcher
 }
 
@@ -117,12 +118,19 @@ type EmEvseInfo interface {
 	SoftwareVersion() string
 	// EVSE type code. Some feature's availabilities depend on this type.
 	EvseType() byte
+	// How many phases the EVSE supports (1 or 3).
 	Phases() EmPhases
+	// Whether the EVSE supports forcing 1P charging when connected on 3P.
 	CanForceSinglePhase() bool
+	// Maximum power the EVSE can deliver, in Watts. Computed from values of EvseType() and Byte70().
 	MaxPower() Watts
+	// Maximum current the EVSE can deliver (on each phase), in Amps.
 	MaxCurrent() Amps
+	// Supported feature flags. Meaning unknown.
 	Feature() uint32
+	// Supported new feature flags. Meaning unknown.
 	SupportNew() uint32
+	// Byte with unknown semantics at offset 70 in the SingleACStatus datagram. CanForceSinglePhase() is computed in part from this.
 	Byte70() byte
 
 	// Fetch fetches the latest info from the EVSE if it wasn't fetched less than maxAge ago.
@@ -445,6 +453,10 @@ type ChargeStopErrorReason uint8
 
 const (
 	ChargeStopOK = ChargeStopErrorReason(0)
+
+	// Note: could not find possible values for ChargeStop errors, except 0 means no error.
+	// There should probably be an error code indicating that no charge is active or planned, and perhaps more.
+	// If you see other values in practice, please open an issue on GitHub and mention the value and semantics.
 
 	ChargeStopErrorEvseOffline     = ChargeStopErrorReason(160) // Library-defined (not a protocol) error code.
 	ChargeStopErrorEvseNotLoggedIn = ChargeStopErrorReason(161) // Library-defined (not a protocol) error code.
