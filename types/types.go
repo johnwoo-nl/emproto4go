@@ -159,7 +159,7 @@ type EmEvseState interface {
 	L1Voltage() Volts
 	L1Current() Amps
 	L2Voltage() Volts
-	L2Currrent() Amps
+	L2Current() Amps
 	L3Voltage() Volts
 	L3Current() Amps
 	InnerTemp() TempCelsius

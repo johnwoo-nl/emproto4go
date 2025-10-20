@@ -48,7 +48,7 @@ func (evse EvseState) L2Voltage() types.Volts {
 	return evse.L2Voltage_
 }
 
-func (evse EvseState) L2Currrent() types.Amps {
+func (evse EvseState) L2Current() types.Amps {
 	return evse.L2Current_
 }
 
