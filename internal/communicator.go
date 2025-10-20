@@ -54,6 +54,10 @@ func (communicator *Communicator) Logger() *logrus.Logger {
 	return communicator.Logger_
 }
 
+func (communicator *Communicator) SetLogger(delegate func(string, string)) {
+	communicator.Logger_.AddHook(&CallHook{Call: delegate, LogLevels: logrus.AllLevels})
+}
+
 func (communicator *Communicator) GetEvse(serial types.EmSerial) types.EmEvse {
 	return communicator.getEvseImpl(serial)
 }

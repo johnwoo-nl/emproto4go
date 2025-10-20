@@ -21,6 +21,9 @@ type EmCommunicator interface {
 	// Logger returns the logger used by this communicator.
 	Logger() *logrus.Logger
 
+	// SetLogger sets a custom logger function for this communicator. Communicator's logger will delegate log messages to this function.
+	SetLogger(delegate func(string, string))
+
 	// Start starts the communicator, which will begin discovering EVSEs.
 	Start() error
 
