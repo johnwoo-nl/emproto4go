@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"time"
 
 	"github.com/johnwoo-nl/emproto4go/types"
@@ -116,8 +115,8 @@ func (charge EvseCharge) Fetch(maxAge time.Duration) error {
 		return sendErr
 	}
 	_, recvErr := charge.evse.WaitForDatagram(5*time.Second, CmdSingleACChargingStatusResponse)
-	if recvErr != nil && charge.evse.communicator.Debug {
-		log.Printf("[!] Failed to fetch charge data for EVSE %s: %v.", charge.evse.Serial(), recvErr)
+	if recvErr != nil {
+		charge.evse.communicator.Logger_.Warnf("[emproto4go] Failed to fetch charge data for EVSE %s: %v.", charge.evse.Serial(), recvErr)
 	}
 	return recvErr
 }

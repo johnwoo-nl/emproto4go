@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"time"
 
 	impl "github.com/johnwoo-nl/emproto4go/internal"
@@ -23,8 +22,9 @@ func (h HeadingHandler) Handle(evse *impl.Evse, _ *impl.Datagram) {
 		if err == nil {
 			now := time.Now()
 			evse.LastActiveLogin = &now
-		} else if evse.Communicator().Debug {
-			log.Printf("Failed to send HeadingResponse to EVSE %s: %v. This may result in the login session expiring and the communicator running the Login flow again.", evse.Serial(), err)
+		} else {
+			evse.Communicator().Logger_.Warnf("[emproto4go] Failed to send HeadingResponse to EVSE %s: %v. This may result in the login session expiring and the communicator running the Login flow again.",
+				evse.Serial(), err)
 		}
 	}()
 }

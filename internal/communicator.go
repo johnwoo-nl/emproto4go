@@ -2,18 +2,19 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type Communicator struct {
 	AppName_ types.UserId
-	Debug    bool
+	Logger_  *logrus.Logger
 	started  bool
 
 	evses      map[types.EmSerial]*Evse
@@ -35,10 +36,10 @@ type Communicator struct {
 	tickerRunning bool
 }
 
-func CreateCommunicator(appName types.UserId, debug bool) *Communicator {
+func CreateCommunicator(appName types.UserId) *Communicator {
 	return &Communicator{
 		AppName_:        appName,
-		Debug:           debug,
+		Logger_:         logrus.New(), // Default on InfoLevel.
 		evses:           make(map[types.EmSerial]*Evse),
 		debouncedEvents: make(map[string]types.EmEvent),
 		debounceTimers:  make(map[string]*time.Timer),
@@ -47,6 +48,10 @@ func CreateCommunicator(appName types.UserId, debug bool) *Communicator {
 
 func (communicator *Communicator) AppName() types.UserId {
 	return communicator.AppName_
+}
+
+func (communicator *Communicator) Logger() *logrus.Logger {
+	return communicator.Logger_
 }
 
 func (communicator *Communicator) GetEvse(serial types.EmSerial) types.EmEvse {
@@ -148,9 +153,7 @@ func (communicator *Communicator) Start() error {
 	communicator.started = true
 	communicator.udpConnMutex.Unlock()
 
-	if communicator.Debug {
-		log.Printf("Communicator started, UDP listener on port %v", addr.Port)
-	}
+	communicator.Logger_.Infof("[emproto4go] Communicator started, UDP listener on port %v", addr.Port)
 
 	// Start ticker goroutine if not already running
 	if !communicator.tickerRunning {
@@ -185,7 +188,7 @@ func (communicator *Communicator) Start() error {
 				communicator.packetReceived(buf[:n], &remoteAddr)
 			} else if err != nil {
 				if !strings.Contains(err.Error(), "use of closed network connection") {
-					log.Printf("UDP read error: %v", err)
+					communicator.Logger_.Warnf("[emproto4go] UDP read error: %v", err)
 				}
 				return
 			}
@@ -220,16 +223,13 @@ func (communicator *Communicator) stopped() {
 	communicator.udpConnMutex.Unlock()
 
 	if communicator.started {
-		if communicator.Debug {
-			log.Printf("Communicator stopped unexpectedly; will restart")
-		}
+		communicator.Logger_.Debug("[emproto4go] Communicator stopped unexpectedly; will restart")
+
 		// If it was stopped unexpectedly, try to restart after a delay. Don't send OFFLINE events, because we may
 		// restart quickly (time-based OFFLINE events could anyway be sent if restart takes too long).
 		communicator.restart()
 	} else {
-		if communicator.Debug {
-			log.Printf("Communicator stopped")
-		}
+		communicator.Logger_.Info("[emproto4go] Communicator stopped")
 		// If we were actually asked to stop, then send OFFLINE events for all EVSEs that were online, and clear
 		// the LastSeen timestamps so we can get ONLINE events again if we'd be started again quickly.
 		communicator.evsesMutex.RLock()
@@ -253,7 +253,7 @@ func (communicator *Communicator) restart() {
 	}
 	err := communicator.Start()
 	if err != nil {
-		log.Printf("Failed to restart communicator (will retry): %v", err)
+		communicator.Logger_.Warnf("[emproto4go] Failed to restart communicator (will retry): %v", err)
 		go func() {
 			time.Sleep(10 * time.Second)
 			communicator.restart()
@@ -266,7 +266,7 @@ func (communicator *Communicator) packetReceived(data []byte, addr *net.Addr) {
 	datagram, err := Decode(data)
 
 	if err != nil {
-		log.Printf("Failed to parse datagram from %v: %v\nDatagram bytes: %v", addr, err, data)
+		communicator.Logger_.Warnf("[emproto4go] Failed to parse datagram from %v: %v\nDatagram bytes: %v", addr, err, data)
 		return
 	}
 	if datagram == nil {
@@ -303,9 +303,8 @@ func (communicator *Communicator) SendDatagram(evse *Evse, datagram *Datagram) e
 		return types.EvseOfflineError{Evse: evse}
 	}
 	addr := &net.UDPAddr{IP: evse.IP(), Port: evse.Port()}
-	if evse.communicator.Debug {
-		log.Printf("-> SEND %+v to %s", datagram, addr)
-	}
+	communicator.Logger_.Tracef("[emproto4go] -> SEND %+v to %s", datagram, addr)
+
 	n, err := communicator.udpConn.WriteTo(data, addr)
 	if err != nil {
 		return err

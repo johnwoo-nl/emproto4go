@@ -3,6 +3,8 @@ package types
 import (
 	"net"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // EmSerial represents the serial number of an EVSE. This is a string of 16 hexadecimal characters.
@@ -15,6 +17,9 @@ type EmPassword string
 type EmCommunicator interface {
 	// AppName returns the app name as specified in createCommunicator. This is used as default userId in ChargeStartParams.
 	AppName() UserId
+
+	// Logger returns the logger used by this communicator.
+	Logger() *logrus.Logger
 
 	// Start starts the communicator, which will begin discovering EVSEs.
 	Start() error

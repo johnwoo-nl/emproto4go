@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"time"
 
 	"github.com/johnwoo-nl/emproto4go/types"
@@ -67,9 +66,7 @@ func (config *EvseConfig) Fetch(maxAge time.Duration) error {
 		result := <-resultsChan
 		if result.err != nil {
 			failed = append(failed, result.name+": "+result.err.Error())
-			if config.evse.communicator.Debug {
-				log.Printf("[!] Failed getting config item %s for EVSE %+v: %v", result.name, config.evse, result.err)
-			}
+			config.evse.communicator.Logger_.Warnf("[emproto4go] Failed getting config item %s for EVSE %+v: %v", result.name, config.evse, result.err)
 		}
 	}
 

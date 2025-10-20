@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"time"
 
 	"github.com/johnwoo-nl/emproto4go/types"
@@ -89,8 +88,8 @@ func (info EvseInfo) Fetch(maxAge time.Duration) error {
 		return sendErr
 	}
 	_, recvErr := info.evse.WaitForDatagram(5*time.Second, CmdGetVersionResponse)
-	if recvErr != nil && info.evse.communicator.Debug {
-		log.Printf("[!] Failed to fetch info for EVSE %s: %v.", info.evse.Serial(), recvErr)
+	if recvErr != nil {
+		info.evse.communicator.Logger_.Warnf("[emproto4go] Failed to fetch info for EVSE %s: %v.", info.evse.Serial(), recvErr)
 	}
 	return recvErr
 }

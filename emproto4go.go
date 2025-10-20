@@ -11,6 +11,6 @@ import (
 //
 //lint:ignore U1000 exported API
 //goland:noinspection GoUnusedExportedFunction
-func CreateCommunicator(appName types.UserId, debug bool) types.EmCommunicator {
-	return internal.CreateCommunicator(appName, debug)
+func CreateCommunicator(appName types.UserId) types.EmCommunicator {
+	return internal.CreateCommunicator(appName)
 }

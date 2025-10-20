@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/binary"
-	"log"
 	"time"
 
 	impl "github.com/johnwoo-nl/emproto4go/internal"
@@ -94,8 +93,9 @@ func (h SingleAcChargingHandler) Handle(evse *impl.Evse, datagram *impl.Datagram
 	}
 	go func() {
 		err := evse.SendDatagram(response)
-		if err != nil && evse.Communicator().Debug {
-			log.Printf("Failed to send SingleACChargingResponse to EVSE %s: %v.", evse.Serial(), err)
+		if err != nil {
+			evse.Communicator().Logger_.Warnf("[emproto4go] Failed to send SingleACChargingResponse to EVSE %s: %v.",
+				evse.Serial(), err)
 		}
 	}()
 

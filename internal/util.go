@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/johnwoo-nl/emproto4go/types"
@@ -93,7 +92,6 @@ func TimeToEmTimestamp(time *time.Time) uint32 {
 	}
 
 	offset := getOffsetBetweenLocalAndShanghai(*time)
-	log.Printf("TimeToEmTimestamp: local time %v, offset %d seconds\n", time, offset)
 	return uint32(time.Unix() - int64(offset))
 }
 
@@ -118,10 +116,8 @@ func getOffsetBetweenLocalAndShanghai(t time.Time) int {
 
 func CheckPayloadLength(datagram *Datagram, evse *Evse, minLength int) bool {
 	if len(datagram.Payload) < minLength {
-		if evse.communicator.Debug {
-			log.Printf("[!] Received invalid datagram (command 0x%02X) from EVSE %+v: payload too short (need at least %d bytes, got %d)",
-				datagram.Command, evse, minLength, len(datagram.Payload))
-		}
+		evse.communicator.Logger_.Warnf("[emproto4go] Received invalid datagram (command 0x%02X) from EVSE %+v: payload too short (need at least %d bytes, got %d)",
+			datagram.Command, evse, minLength, len(datagram.Payload))
 		return true
 	}
 	return false

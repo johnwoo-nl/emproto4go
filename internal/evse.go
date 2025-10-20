@@ -3,7 +3,6 @@ package internal
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -196,8 +195,8 @@ func (evse *Evse) createChargeStartDatagram(params types.ChargeStartParams) *Dat
 		if evse.info.CanForceSinglePhase() {
 			lineId = 1
 			chargeType = 11
-		} else if evse.communicator.Debug {
-			log.Printf("ChargeStart for EVSE %s requested ForceSinglePhase, but this EVSE does not support it. Will use all available phases.", evse.Serial())
+		} else {
+			evse.communicator.Logger_.Warnf("[emproto4go] ChargeStart for EVSE %s requested ForceSinglePhase, but this EVSE does not support it. Will use all available phases.", evse.Serial())
 		}
 	}
 	maxCurrent := min(params.MaxCurrent, evse.config.MaxCurrent())
@@ -363,14 +362,10 @@ func (evse *Evse) AutoLogin() {
 	}
 	err := evse.Login(evse.password)
 	if err == nil {
-		if evse.communicator.Debug {
-			log.Printf("AutoLogin to EVSE %s successful", evse.Serial())
-		}
+		evse.communicator.Logger_.Debugf("[emproto4go] AutoLogin to EVSE %s successful", evse.Serial())
 		return
 	}
-	if evse.communicator.Debug {
-		log.Printf("AutoLogin to EVSE %s failed: %v (will retry)", evse.Serial(), err)
-	}
+	evse.communicator.Logger_.Warnf("[emproto4go] AutoLogin to EVSE %s failed: %v (will retry)", evse.Serial(), err)
 	go func() {
 		time.Sleep(5 * time.Second)
 		evse.AutoLogin()
@@ -463,9 +458,7 @@ func (evse *Evse) DatagramReceived(datagram *Datagram, addr *net.Addr) {
 	if datagram.Serial != evse.Serial() {
 		return
 	}
-	if evse.communicator.Debug {
-		log.Printf("<- RECV %+v from %v", datagram, *addr)
-	}
+	evse.communicator.Logger_.Tracef("[emproto4go] <- RECV %+v from %v", datagram, *addr)
 
 	wasOnline := evse.IsOnline()
 	now := time.Now()
@@ -498,7 +491,7 @@ func (evse *Evse) DatagramReceived(datagram *Datagram, addr *net.Addr) {
 
 	// Further processing of commands by handlers.
 	if HandlerDelegator.Handle(evse, datagram) == 0 {
-		log.Printf("[!] No handler for command %s from EVSE %s", datagram.Command, evse.Serial())
+		evse.communicator.Logger_.Debugf("[emproto4go] No handler for command %s from EVSE %s", datagram.Command, evse.Serial())
 	}
 
 	// Unblock all waiters for this command

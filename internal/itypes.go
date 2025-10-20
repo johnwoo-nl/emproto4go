@@ -6,6 +6,11 @@ import (
 	"github.com/johnwoo-nl/emproto4go/types"
 )
 
+type Handler interface {
+	Handles() []EmCommand
+	Handle(evse *Evse, datagram *Datagram)
+}
+
 type EmCommand uint16
 
 const (

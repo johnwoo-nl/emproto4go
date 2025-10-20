@@ -12,6 +12,7 @@ import (
 
 	"github.com/johnwoo-nl/emproto4go"
 	"github.com/johnwoo-nl/emproto4go/types"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -62,7 +63,10 @@ func main() {
 		}
 	}
 
-	communicator := emproto4go.CreateCommunicator("emproto4go_test", debug)
+	communicator := emproto4go.CreateCommunicator("emproto4go_test")
+	if debug {
+		communicator.Logger().SetLevel(logrus.TraceLevel)
+	}
 	err := communicator.Start()
 	if err != nil {
 		log.Printf("Cannot start communicator: %v", err)
