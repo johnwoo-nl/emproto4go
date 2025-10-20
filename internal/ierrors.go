@@ -1,9 +1,9 @@
-package itypes
+package internal
 
 import (
 	"fmt"
 
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type InvalidDatagramError struct {

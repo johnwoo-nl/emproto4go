@@ -5,19 +5,18 @@ import (
 	"log"
 	"math"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/emproto4go"
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	impl "github.com/johnwoo-nl/emproto4go/internal"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type SingleAcStatusHandler struct{}
 
-func (h SingleAcStatusHandler) Handles() []itypes.EmCommand {
-	return []itypes.EmCommand{itypes.CmdSingleACStatus}
+func (h SingleAcStatusHandler) Handles() []impl.EmCommand {
+	return []impl.EmCommand{impl.CmdSingleACStatus}
 }
 
-func (h SingleAcStatusHandler) Handle(evse *emproto4go.Evse, datagram *emproto4go.Datagram) {
-	if emproto4go.CheckPayloadLength(datagram, evse, 25) {
+func (h SingleAcStatusHandler) Handle(evse *impl.Evse, datagram *impl.Datagram) {
+	if impl.CheckPayloadLength(datagram, evse, 25) {
 		return
 	}
 
@@ -25,15 +24,15 @@ func (h SingleAcStatusHandler) Handle(evse *emproto4go.Evse, datagram *emproto4g
 	oldMetaState := evse.MetaState()
 	changed := false
 
-	if emproto4go.CompareAndSet(&state.LineId_, types.LineId(datagram.Payload[0])) {
+	if impl.CompareAndSet(&state.LineId_, types.LineId(datagram.Payload[0])) {
 		changed = true
 	}
 
 	// L1
-	if emproto4go.CompareAndSet(&state.L1Voltage_, types.Volts(float32(binary.BigEndian.Uint16(datagram.Payload[1:3]))*0.1)) {
+	if impl.CompareAndSet(&state.L1Voltage_, types.Volts(float32(binary.BigEndian.Uint16(datagram.Payload[1:3]))*0.1)) {
 		changed = true
 	}
-	if emproto4go.CompareAndSet(&state.L1Current_, types.Amps(float32(binary.BigEndian.Uint16(datagram.Payload[3:5]))*0.01)) {
+	if impl.CompareAndSet(&state.L1Current_, types.Amps(float32(binary.BigEndian.Uint16(datagram.Payload[3:5]))*0.01)) {
 		changed = true
 	}
 
@@ -48,16 +47,16 @@ func (h SingleAcStatusHandler) Handle(evse *emproto4go.Evse, datagram *emproto4g
 		l3Voltage = types.Volts(float32(binary.BigEndian.Uint16(datagram.Payload[29:31])) * 0.1)
 		l3Current = types.Amps(float32(binary.BigEndian.Uint16(datagram.Payload[31:33])) * 0.01)
 	}
-	if emproto4go.CompareAndSet(&state.L2Voltage_, l2Voltage) {
+	if impl.CompareAndSet(&state.L2Voltage_, l2Voltage) {
 		changed = true
 	}
-	if emproto4go.CompareAndSet(&state.L2Current_, l2Current) {
+	if impl.CompareAndSet(&state.L2Current_, l2Current) {
 		changed = true
 	}
-	if emproto4go.CompareAndSet(&state.L3Voltage_, l3Voltage) {
+	if impl.CompareAndSet(&state.L3Voltage_, l3Voltage) {
 		changed = true
 	}
-	if emproto4go.CompareAndSet(&state.L3Current_, l3Current) {
+	if impl.CompareAndSet(&state.L3Current_, l3Current) {
 		changed = true
 	}
 
@@ -67,34 +66,34 @@ func (h SingleAcStatusHandler) Handle(evse *emproto4go.Evse, datagram *emproto4g
 		float64(state.L2Current_)*float64(state.L2Voltage_) +
 		float64(state.L3Current_)*float64(state.L3Voltage_)
 	currentPower = types.Watts(math.Max(float64(currentPower), computedPower))
-	if emproto4go.CompareAndSet(&state.CurrentPower_, currentPower) {
+	if impl.CompareAndSet(&state.CurrentPower_, currentPower) {
 		changed = true
 	}
 
-	if emproto4go.CompareAndSet(&state.EnergyCounter_, types.KWh(float64(binary.BigEndian.Uint32(datagram.Payload[9:13]))*0.01)) {
+	if impl.CompareAndSet(&state.EnergyCounter_, types.KWh(float64(binary.BigEndian.Uint32(datagram.Payload[9:13]))*0.01)) {
 		changed = true
 	}
 
 	// Temperatures
-	if emproto4go.CompareAndSet(&state.InnerTemp_, emproto4go.ReadTemperature(datagram.Payload, 13)) {
+	if impl.CompareAndSet(&state.InnerTemp_, impl.ReadTemperature(datagram.Payload, 13)) {
 		changed = true
 	}
-	if emproto4go.CompareAndSet(&state.OuterTemp_, emproto4go.ReadTemperature(datagram.Payload, 15)) {
-		changed = true
-	}
-
-	if emproto4go.CompareAndSet(&state.EmergencyBtnState_, types.EmEmergencyBtnState(datagram.Payload[17])) {
+	if impl.CompareAndSet(&state.OuterTemp_, impl.ReadTemperature(datagram.Payload, 15)) {
 		changed = true
 	}
 
-	if emproto4go.CompareAndSet(&state.GunState_, types.EmGunState(datagram.Payload[18])) {
-		changed = true
-	}
-	if emproto4go.CompareAndSet(&state.OutputState_, types.EmOutputState(datagram.Payload[19])) {
+	if impl.CompareAndSet(&state.EmergencyBtnState_, types.EmEmergencyBtnState(datagram.Payload[17])) {
 		changed = true
 	}
 
-	if emproto4go.CompareAndSet(&state.NewProtocol_, len(datagram.Payload) > 33) {
+	if impl.CompareAndSet(&state.GunState_, types.EmGunState(datagram.Payload[18])) {
+		changed = true
+	}
+	if impl.CompareAndSet(&state.OutputState_, types.EmOutputState(datagram.Payload[19])) {
+		changed = true
+	}
+
+	if impl.CompareAndSet(&state.NewProtocol_, len(datagram.Payload) > 33) {
 		changed = true
 	}
 
@@ -105,18 +104,18 @@ func (h SingleAcStatusHandler) Handle(evse *emproto4go.Evse, datagram *emproto4g
 			currentState = types.EmCurrentState(byte34)
 		}
 	}
-	if emproto4go.CompareAndSet(&state.CurrentState_, currentState) {
+	if impl.CompareAndSet(&state.CurrentState_, currentState) {
 		changed = true
 	}
 
 	errors := ParseErrors(binary.BigEndian.Uint32(datagram.Payload[21:25]))
-	if !emproto4go.SliceEqual(state.Errors_, errors) {
+	if !impl.SliceEqual(state.Errors_, errors) {
 		state.Errors_ = errors
 		changed = true
 	}
 
-	response := &emproto4go.Datagram{
-		Command: itypes.CmdSingleACStatusAck,
+	response := &impl.Datagram{
+		Command: impl.CmdSingleACStatusAck,
 		Payload: []byte{1},
 	}
 	go func() {
@@ -148,7 +147,7 @@ func ParseErrors(data uint32) []types.EmError {
 }
 
 func init() {
-	emproto4go.HandlerDelegator.Register(
+	impl.HandlerDelegator.Register(
 		SingleAcStatusHandler{},
 	)
 }

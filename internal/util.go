@@ -1,4 +1,4 @@
-package emproto4go
+package internal
 
 import (
 	"bytes"
@@ -7,8 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 var locShanghai, _ = time.LoadLocation("Asia/Shanghai")
@@ -160,15 +159,15 @@ func MakeChargeId(chargeIdSuffix string) types.ChargeId {
 }
 
 func GetChargeStartErrorReasonMessage(errorReason types.ChargeStartErrorReason) string {
-	if msg, ok := itypes.EmChargeStartErrorMessages[errorReason]; ok {
+	if msg, ok := EmChargeStartErrorMessages[errorReason]; ok {
 		return msg
 	}
-	return fmt.Sprintf("%s (%d)", itypes.EmChargeStartErrorMessages[types.ChargeStartErrorUnknown], errorReason)
+	return fmt.Sprintf("%s (%d)", EmChargeStartErrorMessages[types.ChargeStartErrorUnknown], errorReason)
 }
 
 func GetChargeStopErrorMessage(errorReason types.ChargeStopErrorReason) string {
-	if msg, ok := itypes.EmChargeStopErrorMessages[errorReason]; ok {
+	if msg, ok := EmChargeStopErrorMessages[errorReason]; ok {
 		return msg
 	}
-	return fmt.Sprintf("%s (%d)", itypes.EmChargeStopErrorMessages[types.ChargeStopErrorUnknown], errorReason)
+	return fmt.Sprintf("%s (%d)", EmChargeStopErrorMessages[types.ChargeStopErrorUnknown], errorReason)
 }

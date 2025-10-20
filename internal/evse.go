@@ -1,4 +1,4 @@
-package emproto4go
+package internal
 
 import (
 	"encoding/binary"
@@ -8,8 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type Evse struct {
@@ -26,7 +25,7 @@ type Evse struct {
 	password        types.EmPassword
 
 	waitersMutex sync.Mutex
-	waiters      map[itypes.EmCommand][]chan *Datagram
+	waiters      map[EmCommand][]chan *Datagram
 }
 
 func (evse *Evse) Communicator() *Communicator {
@@ -159,7 +158,7 @@ func (evse *Evse) StartCharge(params types.ChargeStartParams) (types.ChargeStart
 			ErrorMessage: GetChargeStartErrorReasonMessage(types.ChargeStartErrorSendFailed),
 		}, sendErr
 	}
-	response, recvErr := evse.WaitForDatagram(5*time.Second, itypes.CmdChargeStartResponse)
+	response, recvErr := evse.WaitForDatagram(5*time.Second, CmdChargeStartResponse)
 	if recvErr != nil {
 		return types.ChargeStartResult{
 			ErrorReason:  types.ChargeStartErrorNoConfirmation,
@@ -242,7 +241,7 @@ func (evse *Evse) createChargeStartDatagram(params types.ChargeStartParams) *Dat
 	}
 	binary.BigEndian.PutUint16(payload[44:46], 0xFFFF) // Param3, meaning unknown, always 0xFFFF in the OEM app. Leaving it at 0x0000 makes the session stop after just a few seconds, even before car starts taking amps.
 	payload[46] = byte(maxCurrent)
-	return &Datagram{Command: itypes.CmdChargeStart, Payload: payload[:]}
+	return &Datagram{Command: CmdChargeStart, Payload: payload[:]}
 }
 
 func (evse *Evse) StopCharge(params types.ChargeStopParams) (types.ChargeStopResult, error) {
@@ -262,7 +261,7 @@ func (evse *Evse) StopCharge(params types.ChargeStopParams) (types.ChargeStopRes
 	WriteUserId(payload[1:17], params.UserId)
 
 	stopChargeDatagram := &Datagram{
-		Command: itypes.CmdChargeStop,
+		Command: CmdChargeStop,
 		Payload: payload[:],
 	}
 	sendErr := evse.SendDatagram(stopChargeDatagram)
@@ -272,7 +271,7 @@ func (evse *Evse) StopCharge(params types.ChargeStopParams) (types.ChargeStopRes
 			ErrorMessage: GetChargeStopErrorMessage(types.ChargeStopErrorSendFailed),
 		}, sendErr
 	}
-	response, recvErr := evse.WaitForDatagram(5*time.Second, itypes.CmdChargeStartResponse)
+	response, recvErr := evse.WaitForDatagram(5*time.Second, CmdChargeStartResponse)
 	if recvErr != nil {
 		return types.ChargeStopResult{
 			ErrorReason:  types.ChargeStopErrorNoConfirmation,
@@ -312,7 +311,7 @@ func (evse *Evse) Login(password types.EmPassword) error {
 	}
 
 	requestLoginDatagram := &Datagram{
-		Command:  itypes.CmdRequestLogin,
+		Command:  CmdRequestLogin,
 		Password: password,
 		Payload:  []byte{0},
 	}
@@ -321,18 +320,18 @@ func (evse *Evse) Login(password types.EmPassword) error {
 		return err
 	}
 
-	response, err := evse.WaitForDatagram(5*time.Second, itypes.CmdLoginResponse, itypes.CmdPasswordErrorResponse)
+	response, err := evse.WaitForDatagram(5*time.Second, CmdLoginResponse, CmdPasswordErrorResponse)
 	if err != nil {
 		return err
 	}
-	if response.Command == itypes.CmdPasswordErrorResponse {
+	if response.Command == CmdPasswordErrorResponse {
 		return types.EvseInvalidPasswordError{Evse: evse}
 	}
 
 	evse.password = password
 
 	loginConfirmDatagram := &Datagram{
-		Command: itypes.CmdLoginConfirm,
+		Command: CmdLoginConfirm,
 		Payload: []byte{0},
 	}
 	err = evse.SendDatagram(loginConfirmDatagram)
@@ -385,7 +384,7 @@ func (evse *Evse) SendDatagram(datagram *Datagram) error {
 // WaitForDatagram waits for a datagram with one of the specified commands to be received from the EVSE, and
 // returns the first matching datagram received. If no datagram is received within the specified timeout, or the
 // wait is interrupted (e.g. communicator is stopped), an error is returned.
-func (evse *Evse) WaitForDatagram(timeout time.Duration, commands ...itypes.EmCommand) (*Datagram, error) {
+func (evse *Evse) WaitForDatagram(timeout time.Duration, commands ...EmCommand) (*Datagram, error) {
 	if len(commands) == 0 {
 		return nil, nil
 	}
@@ -393,7 +392,7 @@ func (evse *Evse) WaitForDatagram(timeout time.Duration, commands ...itypes.EmCo
 
 	evse.waitersMutex.Lock()
 	if evse.waiters == nil {
-		evse.waiters = make(map[itypes.EmCommand][]chan *Datagram)
+		evse.waiters = make(map[EmCommand][]chan *Datagram)
 	}
 	for _, cmd := range commands {
 		evse.waiters[cmd] = append(evse.waiters[cmd], ch)

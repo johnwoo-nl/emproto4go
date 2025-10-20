@@ -1,11 +1,10 @@
-package emproto4go
+package internal
 
 import (
 	"log"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type EvseInfo struct {
@@ -85,11 +84,11 @@ func (info EvseInfo) Fetch(maxAge time.Duration) error {
 		return types.EvseNotLoggedInError{Evse: info.evse}
 	}
 
-	datagram := Datagram{Command: itypes.CmdGetVersion, Payload: []byte{}}
+	datagram := Datagram{Command: CmdGetVersion, Payload: []byte{}}
 	if sendErr := info.evse.SendDatagram(&datagram); sendErr != nil {
 		return sendErr
 	}
-	_, recvErr := info.evse.WaitForDatagram(5*time.Second, itypes.CmdGetVersionResponse)
+	_, recvErr := info.evse.WaitForDatagram(5*time.Second, CmdGetVersionResponse)
 	if recvErr != nil && info.evse.communicator.Debug {
 		log.Printf("[!] Failed to fetch info for EVSE %s: %v.", info.evse.Serial(), recvErr)
 	}

@@ -4,19 +4,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/emproto4go"
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
+	impl "github.com/johnwoo-nl/emproto4go/internal"
 )
 
 type HeadingHandler struct{}
 
-func (h HeadingHandler) Handles() []itypes.EmCommand {
-	return []itypes.EmCommand{itypes.CmdHeading}
+func (h HeadingHandler) Handles() []impl.EmCommand {
+	return []impl.EmCommand{impl.CmdHeading}
 }
 
-func (h HeadingHandler) Handle(evse *emproto4go.Evse, _ *emproto4go.Datagram) {
-	response := &emproto4go.Datagram{
-		Command: itypes.CmdHeadingResponse,
+func (h HeadingHandler) Handle(evse *impl.Evse, _ *impl.Datagram) {
+	response := &impl.Datagram{
+		Command: impl.CmdHeadingResponse,
 		Payload: []byte{0},
 	}
 	go func() {
@@ -31,7 +30,7 @@ func (h HeadingHandler) Handle(evse *emproto4go.Evse, _ *emproto4go.Datagram) {
 }
 
 func init() {
-	emproto4go.HandlerDelegator.Register(
+	impl.HandlerDelegator.Register(
 		HeadingHandler{},
 	)
 }

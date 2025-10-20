@@ -1,11 +1,10 @@
-package emproto4go
+package internal
 
 import (
 	"log"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type EvseConfig struct {
@@ -56,11 +55,11 @@ func (config *EvseConfig) Fetch(maxAge time.Duration) error {
 
 	// Send out the GET requests and wait for responses in parallel.
 	// Note that we don't actually process the incoming config values here; they are handled by ConfigHandler.
-	go func() { resultsChan <- config.get("Name", itypes.CmdSetAndGetName, 32) }()
-	go func() { resultsChan <- config.get("Language", itypes.CmdSetAndGetLanguage, 1) }()
-	go func() { resultsChan <- config.get("TemperatureUnit", itypes.CmdSetAndGetTemperatureUnit, 1) }()
-	go func() { resultsChan <- config.get("OfflineCharge", itypes.CmdSetAndGetOfflineCharge, 1) }()
-	go func() { resultsChan <- config.get("MaxCurrent", itypes.CmdSetAndGetMaxCurrent, 1) }()
+	go func() { resultsChan <- config.get("Name", CmdSetAndGetName, 32) }()
+	go func() { resultsChan <- config.get("Language", CmdSetAndGetLanguage, 1) }()
+	go func() { resultsChan <- config.get("TemperatureUnit", CmdSetAndGetTemperatureUnit, 1) }()
+	go func() { resultsChan <- config.get("OfflineCharge", CmdSetAndGetOfflineCharge, 1) }()
+	go func() { resultsChan <- config.get("MaxCurrent", CmdSetAndGetMaxCurrent, 1) }()
 
 	// Wait for all fetches to complete (or timeout), and collect errors with field names.
 	var failed []string
@@ -95,7 +94,7 @@ func (config *EvseConfig) SetName(name string) error {
 	copy(value[:4], []byte{'A', 'C', 'P', '#'})
 	copy(value[4:], asciiName)
 
-	if err := config.set(itypes.CmdSetAndGetName, value); err != nil {
+	if err := config.set(CmdSetAndGetName, value); err != nil {
 		return err
 	}
 	config.Name_ = string(asciiName)
@@ -104,7 +103,7 @@ func (config *EvseConfig) SetName(name string) error {
 }
 
 func (config *EvseConfig) SetLanguage(language types.EmLanguage) error {
-	if err := config.set(itypes.CmdSetAndGetLanguage, []byte{byte(language)}); err != nil {
+	if err := config.set(CmdSetAndGetLanguage, []byte{byte(language)}); err != nil {
 		return err
 	}
 	config.Language_ = language
@@ -113,7 +112,7 @@ func (config *EvseConfig) SetLanguage(language types.EmLanguage) error {
 }
 
 func (config *EvseConfig) SetTemperatureUnit(unit types.EmTemperatureUnit) error {
-	if err := config.set(itypes.CmdSetAndGetTemperatureUnit, []byte{byte(unit)}); err != nil {
+	if err := config.set(CmdSetAndGetTemperatureUnit, []byte{byte(unit)}); err != nil {
 		return err
 	}
 	config.TemperatureUnit_ = unit
@@ -126,7 +125,7 @@ func (config *EvseConfig) SetOfflineCharge(offlineCharge bool) error {
 	if offlineCharge {
 		offlineChargeByte = byte(0)
 	}
-	if err := config.set(itypes.CmdSetAndGetOfflineCharge, []byte{offlineChargeByte}); err != nil {
+	if err := config.set(CmdSetAndGetOfflineCharge, []byte{offlineChargeByte}); err != nil {
 		return err
 	}
 	config.OfflineCharge_ = offlineCharge
@@ -135,7 +134,7 @@ func (config *EvseConfig) SetOfflineCharge(offlineCharge bool) error {
 }
 
 func (config *EvseConfig) SetMaxCurrent(maxCurrent types.Amps) error {
-	if err := config.set(itypes.CmdSetAndGetMaxCurrent, []byte{byte(maxCurrent)}); err != nil {
+	if err := config.set(CmdSetAndGetMaxCurrent, []byte{byte(maxCurrent)}); err != nil {
 		return err
 	}
 	config.MaxCurrent_ = maxCurrent
@@ -143,7 +142,7 @@ func (config *EvseConfig) SetMaxCurrent(maxCurrent types.Amps) error {
 	return nil
 }
 
-func (config *EvseConfig) get(name string, command itypes.EmCommand, valueLen uint) result {
+func (config *EvseConfig) get(name string, command EmCommand, valueLen uint) result {
 	if !config.evse.IsLoggedIn() {
 		return result{name: name, err: types.EvseNotLoggedInError{Evse: config.evse}}
 	}
@@ -158,7 +157,7 @@ func (config *EvseConfig) get(name string, command itypes.EmCommand, valueLen ui
 	return result{name: name, err: recvErr}
 }
 
-func (config *EvseConfig) set(command itypes.EmCommand, value []byte) error {
+func (config *EvseConfig) set(command EmCommand, value []byte) error {
 	if !config.evse.IsLoggedIn() {
 		return types.EvseNotLoggedInError{Evse: config.evse}
 	}

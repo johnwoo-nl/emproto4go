@@ -1,7 +1,7 @@
-package emproto4go
+package internal
 
 import (
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type EvseState struct {

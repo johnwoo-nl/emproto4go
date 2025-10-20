@@ -39,8 +39,8 @@ Then, in your code, import the library:
 
 ```go
 import (
-    "github.com/johnwoo-nl/emproto4go/pkg/emproto4go"
-    "github.com/johnwoo-nl/emproto4go/pkg/types"
+    "github.com/johnwoo-nl/emproto4go"
+    "github.com/johnwoo-nl/emproto4go/types"
 )
 ```
 
@@ -50,62 +50,63 @@ A simple program that discovers EVSEs on the network and prints their basic info
 
 ```go
 package main
-import (
-    "log"
-    "os"
-    "os/signal"
-    "syscall"
 
-    "github.com/johnwoo-nl/emproto4go/pkg/emproto4go"
-    "github.com/johnwoo-nl/emproto4go/pkg/types"
+import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/johnwoo-nl/emproto4go"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 func main() {
-    // Instantiate a communicator.
-    communicator := emproto4go.CreateCommunicator("My App", false)
-	
+	// Instantiate a communicator.
+	var communicator types.EmCommunicator = emproto4go.CreateCommunicator("My App", false)
+
 	// Start listening for EVSEMaster UDP datagrams.
 	err := communicator.Start()
 	if err != nil {
 		log.Fatalf("Cannot start communicator: %v", err)
 		return
 	}
-	
+
 	// Make the communicator stop when main() exits.
 	defer communicator.Stop()
 
 	// Create a channel to receive events.
-    eventChan := make(chan types.EmEvent, 10)
-    
-    // Watch all event types (nil as first param means watch all EVSEs, empty slice as 2nd param means all event types).
-    watcher := communicator.Watch(nil, []types.EmEventType{}, eventChan)
-	
+	eventChan := make(chan types.EmEvent, 10)
+
+	// Watch all event types (nil as first param means watch all EVSEs, empty slice as 2nd param means all event types).
+	watcher := communicator.Watch(nil, []types.EmEventType{}, eventChan)
+
 	// Make the watcher stop when main() exits.
-    defer watcher.Stop()
-    
-    // Goroutine to handle/log received events
-    go func() {
-        for event := range eventChan {
-            if event.Type == types.EvseInfoUpdated {
-                log.Printf("[%v] Evse=%+v, Info=%+v", event.Type, event.Evse, event.Evse.Info())
-            } else if event.Type == types.EvseStateUpdated {
-                log.Printf("[%v] Evse=%+v, State=%+v", event.Type, event.Evse, event.Evse.State())
-            } else if event.Type == types.EvseChargeUpdated {
-                log.Printf("[%v] Evse=%+v, Charge=%+v", event.Type, event.Evse, event.Evse.Charge())
-            } else if event.Type == types.EvseConfigUpdated {
-                log.Printf("[%v] Evse=%+v, Config=%+v", event.Type, event.Evse, event.Evse.Config())
-            } else {
-                log.Printf("[%v] Evse=%+v", event.Type, event.Evse)
-            }
-        }
-    }()
+	defer watcher.Stop()
+
+	// Goroutine to handle/log received events
+	go func() {
+		for event := range eventChan {
+			if event.Type == types.EvseInfoUpdated {
+				log.Printf("[%v] Evse=%+v, Info=%+v", event.Type, event.Evse, event.Evse.Info())
+			} else if event.Type == types.EvseStateUpdated {
+				log.Printf("[%v] Evse=%+v, State=%+v", event.Type, event.Evse, event.Evse.State())
+			} else if event.Type == types.EvseChargeUpdated {
+				log.Printf("[%v] Evse=%+v, Charge=%+v", event.Type, event.Evse, event.Evse.Charge())
+			} else if event.Type == types.EvseConfigUpdated {
+				log.Printf("[%v] Evse=%+v, Config=%+v", event.Type, event.Evse, event.Evse.Config())
+			} else {
+				log.Printf("[%v] Evse=%+v", event.Type, event.Evse)
+			}
+		}
+	}()
 
 	// Wait for interrupt signal to do a graceful shutdown.
-    signalChan := make(chan os.Signal, 1)
-    signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-    log.Println("Press Ctrl+C to exit.")
-    <-signalChan
-    log.Println("Stopping...")
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+	log.Println("Press Ctrl+C to exit.")
+	<-signalChan
+	log.Println("Stopping...")
 }
 ```
 
@@ -117,29 +118,28 @@ The `EmCommunicator` interface is the entry point to the library, keeping track 
 You can create a communicator instance using the `createCommunicator` factory function exported by the `main.go` library index file.
 
 ```go
-EmCommunicator.Start()
+communicator.Start()
 // Starts listening for EVSEMaster UDP datagrams on the network, and communicating with EVSEs.
 // Start can return an error if there's a problem setting up the UDP socket.
 // If Start succeeds, you should call Stop to gracefully shut down the UDP socket and listener goroutine.
 
-EmCommunicator.Stop()
+communicator.Stop()
 // Stops listening for EVSEMaster UDP datagrams and closes the UDP socket.
 
-EmCommunicator.GetEvses()
+communicator.GetEvses()
 // Returns a slice of all known EVSEs. Initially, this will be empty until EVSEs are discovered on the network or are predefined manually via `DefineEvse`.
 
-EmCommunicator.GetEvse(serial EmSerial)
+communicator.GetEvse(serial EmSerial)
 // Returns a single EVSE by its serial number, or nil if no such EVSE is known.
 
-EmCommunicator.DefineEvse(serial EmSerial)
+communicator.DefineEvse(serial EmSerial)
 // Predefines an EVSE with given serial number, so GetEvse will return it even before it's discovered on the network.
 // This is useful if you know the serial numbers of your EVSEs in advance, and it is offline, or you want to set its password before it is discovered.
 // If an EVSE already exists with the given serial, that existing instance is returned.
-
 // If you set a password for such a predefined EVSE, the communicator will automatically try to log in to it once it is discovered on the network:
 communicator.DefineEvse("123456789ABCDEF").UsePassword("123456")
 
-EmCommunicator.Watch()
+communicator.Watch(evse EmEvse, eventTypes []EmEventType, channel chan<- EmEvent) EmEventWatcher
 // Starts a watcher listening for events from either one specified EVSE, or all EVSEs.
 ```
 
@@ -235,7 +235,7 @@ state := evse.State()
 state.CurrentPower()  // Current output power in Watts (across all phases).
 state.L1Voltage()     // Current voltage on phase L1 in Volts.
 state.L1Current()     // Current amps going through phase L1.
-// Note: Volts and amps also available for L2 and L3 phases (if applicable).
+// Note: Voltage and Current also available for L2 and L3 phases (if applicable).
 
 state.EnergyCounter() // Energy counter incrementing across charging sessions, in kWh (floating-point type).
 // Note: EnergyCounter can be reset if the EVSE is disconnected from mains -- it is not a persistent total.
@@ -329,7 +329,7 @@ config data structure will also be updated and a `ConfigUpdated` event will be e
 evse.Config().SetName("My charger")
 evse.Config().SetOffLineCharge(false)
 evse.Config().SetTemperatureUnit(types.Celsius)
-evse.Config().SetLanguage(English)
+evse.Config().SetLanguage(types.English)
 ```
 
 #### Starting a charging session
@@ -397,6 +397,11 @@ err := evse.StopCharge(stopParams)
 Note: `StopCharge` will also cancel a planned charging session, if one was set using `StartAt` as an option for `StartCharge()`.
 
 ## CLI test runner
+
+To run the CLI test runner from source:
+```terminaloutput
+go run cmd/clitest.go
+```
 
 To build the CLI test runner:
 ```terminaloutput

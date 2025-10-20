@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/pkg/emproto4go"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 func main() {

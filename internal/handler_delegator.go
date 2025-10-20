@@ -1,4 +1,4 @@
-package emproto4go
+package internal
 
 type handlerDelegator struct {
 	Handlers []Handler

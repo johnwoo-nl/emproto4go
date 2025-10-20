@@ -1,11 +1,10 @@
-package emproto4go
+package internal
 
 import (
 	"log"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type EvseCharge struct {
@@ -112,11 +111,11 @@ func (charge EvseCharge) Fetch(maxAge time.Duration) error {
 		return types.EvseNotLoggedInError{Evse: charge.evse}
 	}
 
-	datagram := Datagram{Command: itypes.CmdRequestSingleACCharging, Payload: []byte{0x00}}
+	datagram := Datagram{Command: CmdRequestSingleACCharging, Payload: []byte{0x00}}
 	if sendErr := charge.evse.SendDatagram(&datagram); sendErr != nil {
 		return sendErr
 	}
-	_, recvErr := charge.evse.WaitForDatagram(5*time.Second, itypes.CmdSingleACChargingStatusResponse)
+	_, recvErr := charge.evse.WaitForDatagram(5*time.Second, CmdSingleACChargingStatusResponse)
 	if recvErr != nil && charge.evse.communicator.Debug {
 		log.Printf("[!] Failed to fetch charge data for EVSE %s: %v.", charge.evse.Serial(), recvErr)
 	}

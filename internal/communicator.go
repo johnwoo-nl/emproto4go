@@ -1,4 +1,4 @@
-package emproto4go
+package internal
 
 import (
 	"fmt"
@@ -8,8 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type Communicator struct {
@@ -284,7 +283,7 @@ func (communicator *Communicator) SendDatagram(evse *Evse, datagram *Datagram) e
 	if !evse.IsOnline() {
 		return types.EvseOfflineError{Evse: evse}
 	}
-	if !evse.IsLoggedIn() && datagram.Command != itypes.CmdRequestLogin && datagram.Command != itypes.CmdLoginConfirm {
+	if !evse.IsLoggedIn() && datagram.Command != CmdRequestLogin && datagram.Command != CmdLoginConfirm {
 		return types.EvseNotLoggedInError{Evse: evse}
 	}
 
@@ -312,7 +311,7 @@ func (communicator *Communicator) SendDatagram(evse *Evse, datagram *Datagram) e
 		return err
 	}
 	if n != len(data) {
-		return itypes.DatagramSendError{
+		return DatagramSendError{
 			Evse:    evse,
 			Command: datagram.Command,
 			Message: fmt.Sprintf("incomplete write (%d of %d bytes sent)", n, len(data)),

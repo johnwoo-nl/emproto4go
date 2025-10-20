@@ -1,18 +1,17 @@
-package emproto4go
+package internal
 
 import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/johnwoo-nl/emproto4go/internal/pkg/itypes"
-	"github.com/johnwoo-nl/emproto4go/pkg/types"
+	"github.com/johnwoo-nl/emproto4go/types"
 )
 
 type Datagram struct {
 	Key      byte
 	Serial   types.EmSerial
 	Password types.EmPassword
-	Command  itypes.EmCommand
+	Command  EmCommand
 	Payload  []byte
 }
 
@@ -87,14 +86,14 @@ func Decode(data []byte) (*Datagram, error) {
 		computedChecksum = (computedChecksum + uint16(b)) % 0xffff
 	}
 	if computedChecksum != packetChecksum {
-		return nil, itypes.InvalidDatagramError{Message: fmt.Sprintf("checksum mismatch, computed %04x does not match %04x from packet", computedChecksum, packetChecksum)}
+		return nil, InvalidDatagramError{Message: fmt.Sprintf("checksum mismatch, computed %04x does not match %04x from packet", computedChecksum, packetChecksum)}
 	}
 
 	datagram := Datagram{
 		Key:      data[4],
 		Serial:   types.EmSerial(fmt.Sprintf("%02x", data[5:13])),
 		Password: types.EmPassword(ReadString(data[13:19])),
-		Command:  itypes.EmCommand(binary.BigEndian.Uint16(data[19:21])),
+		Command:  EmCommand(binary.BigEndian.Uint16(data[19:21])),
 		Payload:  data[21 : len(data)-4],
 	}
 
